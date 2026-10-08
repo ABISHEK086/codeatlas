@@ -15,6 +15,7 @@ from ..analyze import analyze_repo
 from .. import graph as graph_lib
 from ..models import Commit, File, Repository, Symbol, User
 from ..indexer import index_repo, search_repo
+from ..impact import analyze_impact
 
 router = APIRouter(prefix="/repos", tags=["repos"])
 
@@ -182,3 +183,12 @@ def search(repo_id: int, q: str, k: int = 5, kind: str | None = None,
            user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     repo = _owned_repo(repo_id, user, db)
     return search_repo(db, repo.id, q, min(max(k, 1), 20), kind)
+
+@router.get("/{repo_id}/impact")
+def impact(repo_id: int, path: str, user: User = Depends(get_current_user),
+           db: Session = Depends(get_db)):
+    repo = _owned_repo(repo_id, user, db)
+    result = analyze_impact(db, repo.id, path)
+    if result is None:
+        raise HTTPException(404, f"No file at path '{path}'")
+    return result
