@@ -17,6 +17,11 @@ from ..security import (
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
+def _back(error: str) -> RedirectResponse:
+    """Send the user to the sign-in page with a reason."""
+    return RedirectResponse(f"{settings.frontend_url}/?auth_error={error}")
+
+
 @router.get("/github/login")
 def github_login():
     if not settings.github_client_id:
@@ -32,17 +37,26 @@ def github_login():
 
 
 @router.get("/github/callback")
-def github_callback(code: str, state: str, db: Session = Depends(get_db)):
+def github_callback(
+    code: str | None = None,
+    state: str | None = None,
+    error: str | None = None,
+    db: Session = Depends(get_db),
+):
+    # User clicked "Cancel" on GitHub's authorize screen
+    if error or not code or not state:
+        return _back("denied" if error == "access_denied" else "failed")
+
     try:
         decode_token(state, "state")
     except jwt.PyJWTError:
-        raise HTTPException(400, "Invalid or expired OAuth state")
+        return _back("expired")
 
     try:
         token = github.exchange_code(code)
         gh = github.get_user(token)
-    except Exception as e:
-        raise HTTPException(400, f"GitHub login failed: {e}")
+    except Exception:
+        return _back("failed")
 
     user = db.scalar(select(User).where(User.github_id == gh["id"]))
     if user is None:
