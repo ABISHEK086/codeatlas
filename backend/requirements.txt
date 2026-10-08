@@ -5,3 +5,4 @@ pydantic-settings
 httpx
 networkx
 numpy
+pyjwt

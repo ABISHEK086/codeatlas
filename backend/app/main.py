@@ -6,6 +6,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from .db import get_db, init_db
+from .routers import auth, repos
 
 
 @asynccontextmanager
@@ -14,7 +15,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="CodeAtlas API", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="CodeAtlas API", version="0.2.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -23,6 +24,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(auth.router)
+app.include_router(repos.router)
 
 
 @app.get("/health")

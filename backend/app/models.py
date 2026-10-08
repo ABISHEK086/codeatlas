@@ -11,15 +11,28 @@ class Base(DeclarativeBase):
     pass
 
 
-class Repository(Base):
-    __tablename__ = "repositories"
-    __table_args__ = (UniqueConstraint("owner", "name"),)
+class User(Base):
+    __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    github_id: Mapped[int] = mapped_column(Integer, unique=True, index=True)
+    login: Mapped[str] = mapped_column(String(255))
+    avatar_url: Mapped[str | None] = mapped_column(Text)
+    access_token: Mapped[str] = mapped_column(Text)  # dev only: encrypt before deploying
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class Repository(Base):
+    __tablename__ = "repositories"
+    __table_args__ = (UniqueConstraint("user_id", "owner", "name"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     owner: Mapped[str] = mapped_column(String(255))
     name: Mapped[str] = mapped_column(String(255))
     default_branch: Mapped[str] = mapped_column(String(255), default="main")
     status: Mapped[str] = mapped_column(String(50), default="pending")  # pending|indexing|ready|failed
+    error: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     files: Mapped[list["File"]] = relationship(back_populates="repo", cascade="all, delete-orphan")
@@ -71,7 +84,7 @@ class Chunk(Base):
     start_line: Mapped[int] = mapped_column(Integer)
     end_line: Mapped[int] = mapped_column(Integer)
     content: Mapped[str] = mapped_column(Text)
-    embedding: Mapped[bytes | None] = mapped_column(LargeBinary)  # float32 bytes, see vectors.py
+    embedding: Mapped[bytes | None] = mapped_column(LargeBinary)
 
 
 class Commit(Base):

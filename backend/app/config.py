@@ -10,6 +10,9 @@ class Settings(BaseSettings):
     github_client_secret: str = ""
     groq_api_key: str = ""
     embedding_dim: int = 384
+    backend_url: str = "http://localhost:8000"
+    frontend_url: str = "http://localhost:8000/auth/me"
+    max_commits: int = 50
 
 
 settings = Settings()
