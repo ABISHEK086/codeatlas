@@ -3,6 +3,7 @@ import { PanelLeftOpen } from 'lucide-react'
 import { api, ApiError, LOGIN_URL, type Repo, type User } from '@/api'
 import AppSidebar, { type Page } from '@/components/app-sidebar'
 import Overview from '@/components/overview'
+import ImpactPage from '@/components/impact-page'
 import ContributionSkyline from '@/components/ui/contribution-skyline'
 
 function LoginScreen() {
@@ -93,12 +94,14 @@ function Workspace({ user, onLogout }: { user: User; onLogout: () => void }) {
         </header>
 
         <main className="flex-1 overflow-y-auto">
-          {repo ? (
-            <Overview key={repo.id} repo={repo} />
-          ) : (
+          {!repo ? (
             <p className="mx-auto mt-24 max-w-sm text-center text-sm text-muted-foreground">
               Connect a repository from the sidebar to get started.
             </p>
+          ) : page === 'impact' && repo.status === 'ready' ? (
+            <ImpactPage key={repo.id} repo={repo} />
+          ) : (
+            <Overview key={repo.id} repo={repo} />
           )}
         </main>
       </div>

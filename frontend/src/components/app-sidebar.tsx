@@ -8,11 +8,10 @@ export type Page = 'overview' | 'impact' | 'graph' | 'ask'
 
 const PAGES: { id: Page; title: string; icon: ElementType; soon?: boolean }[] = [
   { id: 'overview', title: 'Overview', icon: LayoutDashboard },
-  { id: 'impact', title: 'Impact analysis', icon: Gauge, soon: true },
-  { id: 'graph', title: 'Dependency graph', icon: Network, soon: true },
-  { id: 'ask', title: 'Ask CodeAtlas', icon: MessageSquare, soon: true },
+  { id: 'impact', title: 'Impact analysis', icon: Gauge },
+  { id: 'graph', title: 'Dependency graph', icon: Network },
+  { id: 'ask', title: 'Ask CodeAtlas', icon: MessageSquare },
 ]
-
 const DOT: Record<Repo['status'], string> = {
   ready: 'bg-success',
   indexing: 'bg-warning animate-pulse',
