@@ -19,6 +19,7 @@ from ..indexer import index_repo, search_repo
 from ..impact import analyze_impact
 from .. import llm
 from ..agent import run_agent
+from ..models import Commit, CommitFile, File, Repository, Symbol, User
 
 router = APIRouter(prefix="/repos", tags=["repos"])
 
@@ -213,3 +214,19 @@ def ask(repo_id: int, body: AskBody, user: User = Depends(get_current_user),
         raise HTTPException(404, str(e))
     except llm.LLMError as e:
         raise HTTPException(502, str(e))
+
+@router.get("/{repo_id}/activity")
+def activity(repo_id: int, user: User = Depends(get_current_user),
+             db: Session = Depends(get_db)):
+    """File changes per day, built from the stored commit history."""
+    repo = _owned_repo(repo_id, user, db)
+    day = func.date(Commit.committed_at)
+    rows = db.execute(
+        select(day.label("day"), func.count(CommitFile.id).label("n"))
+        .select_from(Commit)
+        .join(CommitFile, CommitFile.commit_id == Commit.id)
+        .where(Commit.repo_id == repo.id, Commit.committed_at.is_not(None))
+        .group_by(day)
+        .order_by(day)
+    ).all()
+    return [{"date": r.day, "count": r.n} for r in rows]
