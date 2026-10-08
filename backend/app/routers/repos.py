@@ -11,6 +11,10 @@ from ..db import get_db
 from ..ingest import ingest_repo
 from ..models import Commit, File, Repository, User
 from ..security import get_current_user
+from ..analyze import analyze_repo
+from .. import graph as graph_lib
+from ..models import Commit, File, Repository, Symbol, User
+from ..indexer import index_repo, search_repo
 
 router = APIRouter(prefix="/repos", tags=["repos"])
 
@@ -106,3 +110,75 @@ def list_files(repo_id: int, kind: str | None = None,
         q = q.where(File.kind == kind)
     rows = db.execute(q.order_by(File.path)).all()
     return [{"id": r.id, "path": r.path, "language": r.language, "kind": r.kind} for r in rows]
+
+@router.post("/{repo_id}/analyze")
+def analyze(repo_id: int, user: User = Depends(get_current_user),
+            db: Session = Depends(get_db)):
+    repo = _owned_repo(repo_id, user, db)
+    if repo.status != "ready":
+        raise HTTPException(409, "Repository is not ready yet")
+    return analyze_repo(db, repo.id)
+
+
+@router.get("/{repo_id}/files/{file_id}/symbols")
+def file_symbols(repo_id: int, file_id: int, user: User = Depends(get_current_user),
+                 db: Session = Depends(get_db)):
+    repo = _owned_repo(repo_id, user, db)
+    file = db.get(File, file_id)
+    if not file or file.repo_id != repo.id:
+        raise HTTPException(404, "File not found")
+    rows = db.scalars(select(Symbol).where(Symbol.file_id == file.id)
+                      .order_by(Symbol.start_line)).all()
+    return [{"name": s.name, "kind": s.kind, "start_line": s.start_line,
+             "end_line": s.end_line} for s in rows]
+
+
+@router.get("/{repo_id}/graph")
+def get_graph(repo_id: int, user: User = Depends(get_current_user),
+              db: Session = Depends(get_db)):
+    repo = _owned_repo(repo_id, user, db)
+    g = graph_lib.build_graph(db, repo.id)
+    return {
+        "nodes": [{"id": n, **d} for n, d in g.nodes(data=True)],
+        "edges": [{"source": u, "target": v, "kind": d["kind"]}
+                  for u, v, d in g.edges(data=True)],
+    }
+
+
+@router.get("/{repo_id}/dependents")
+def get_dependents(repo_id: int, path: str, user: User = Depends(get_current_user),
+                   db: Session = Depends(get_db)):
+    repo = _owned_repo(repo_id, user, db)
+    file = db.scalar(select(File).where(File.repo_id == repo.id, File.path == path))
+    if not file:
+        raise HTTPException(404, f"No file at path '{path}'")
+    g = graph_lib.build_graph(db, repo.id)
+
+    def describe(dist: dict[int, int]) -> list[dict]:
+        rows = [{"path": g.nodes[i]["path"], "kind": g.nodes[i]["kind"], "distance": d}
+                for i, d in dist.items()]
+        return sorted(rows, key=lambda r: (r["distance"], r["path"]))
+
+    affected = describe(graph_lib.dependents(g, file.id))
+    return {
+        "file": path,
+        "direct_dependents": [r for r in affected if r["distance"] == 1],
+        "all_dependents": affected,
+        "affected_tests": [r for r in affected if r["kind"] == "test"],
+        "depends_on": describe(graph_lib.dependencies(g, file.id)),
+    }
+
+@router.post("/{repo_id}/index")
+def index(repo_id: int, user: User = Depends(get_current_user),
+          db: Session = Depends(get_db)):
+    repo = _owned_repo(repo_id, user, db)
+    if repo.status != "ready":
+        raise HTTPException(409, "Repository is not ready yet")
+    return index_repo(db, repo.id)
+
+
+@router.get("/{repo_id}/search")
+def search(repo_id: int, q: str, k: int = 5, kind: str | None = None,
+           user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    repo = _owned_repo(repo_id, user, db)
+    return search_repo(db, repo.id, q, min(max(k, 1), 20), kind)

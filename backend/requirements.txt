@@ -6,3 +6,8 @@ httpx
 networkx
 numpy
 pyjwt
+tree-sitter
+tree-sitter-python
+tree-sitter-typescript
+tree-sitter-javascript
+fastembed

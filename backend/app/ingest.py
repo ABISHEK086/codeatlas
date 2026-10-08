@@ -5,6 +5,7 @@ from . import github
 from .config import settings
 from .db import SessionLocal
 from .models import Commit, CommitFile, File, Repository
+from .analyze import analyze_repo
 
 log = logging.getLogger("codeatlas.ingest")
 
@@ -108,6 +109,12 @@ def ingest_repo(repo_id: int, token: str) -> None:
         for f in pending:
             path_to_id[f.path] = f.id
         db.commit()
+
+        try:
+            analyze_repo(db, repo.id)
+        except Exception:
+            log.exception("analysis failed; continuing without it")
+            db.rollback()
 
         # ---- commits (best effort: don't fail the whole index) ----
         try:
