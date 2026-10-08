@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     github_client_id: str = ""
     github_client_secret: str = ""
     groq_api_key: str = ""
+    groq_model: str = "llama-3.3-70b-versatile"
+    llm_max_steps: int = 6
     embedding_dim: int = 384
     backend_url: str = "http://localhost:8000"
     frontend_url: str = "http://localhost:8000/auth/me"

@@ -91,9 +91,10 @@ def analyze_impact(db: Session, repo_id: int, path: str) -> dict | None:
     if affected and not tests:
         add("No test coverage", 15,
             "other files depend on this one, but no test imports it, directly or indirectly")
-    add("Change frequency", min(10, churn * 2),
+        add("Change frequency", min(10, churn * 2),
         f"touched by {churn} of the analysed commits")
-    hidden = [c for c in co_change if c["hidden_coupling"] and c["confidence"] >= 0.5]
+    hidden = [c for c in co_change
+              if c["hidden_coupling"] and c["confidence"] >= 0.5 and c["times_together"] >= 3]
     add("Hidden coupling", min(10, len(hidden) * 5),
         f"{len(hidden)} file(s) usually change with this one but have no import link")
 

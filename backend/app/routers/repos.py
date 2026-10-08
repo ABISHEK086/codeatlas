@@ -5,6 +5,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel, field_validator
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
+from pydantic import BaseModel, Field, field_validator
 
 from .. import github
 from ..db import get_db
@@ -16,6 +17,8 @@ from .. import graph as graph_lib
 from ..models import Commit, File, Repository, Symbol, User
 from ..indexer import index_repo, search_repo
 from ..impact import analyze_impact
+from .. import llm
+from ..agent import run_agent
 
 router = APIRouter(prefix="/repos", tags=["repos"])
 
@@ -192,3 +195,21 @@ def impact(repo_id: int, path: str, user: User = Depends(get_current_user),
     if result is None:
         raise HTTPException(404, f"No file at path '{path}'")
     return result
+
+class AskBody(BaseModel):
+    question: str = Field(min_length=3, max_length=1000)
+    file_path: str | None = None
+
+
+@router.post("/{repo_id}/ask")
+def ask(repo_id: int, body: AskBody, user: User = Depends(get_current_user),
+        db: Session = Depends(get_db)):
+    repo = _owned_repo(repo_id, user, db)
+    if repo.status != "ready":
+        raise HTTPException(409, "Repository is not ready yet")
+    try:
+        return run_agent(db, repo.id, body.question, body.file_path)
+    except LookupError as e:
+        raise HTTPException(404, str(e))
+    except llm.LLMError as e:
+        raise HTTPException(502, str(e))
