@@ -1,13 +1,13 @@
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.orm import Session
-from fastapi import Request
-from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
 
+from .config import settings
 from .db import get_db, init_db
 from .routers import auth, repos
 
@@ -18,11 +18,11 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="CodeAtlas API", version="0.2.0", lifespan=lifespan)
+app = FastAPI(title="CodeAtlas API", version="0.3.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_origins=[o.strip() for o in settings.cors_origins.split(",") if o.strip()],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -30,6 +30,7 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(repos.router)
+
 
 @app.exception_handler(RequestValidationError)
 async def validation_error(request: Request, exc: RequestValidationError):
@@ -49,8 +50,5 @@ async def unhandled_error(request: Request, exc: Exception):
 
 @app.get("/health")
 def health(db: Session = Depends(get_db)):
-    version = db.execute(text("select sqlite_version()")).scalar()
-    tables = db.execute(
-        text("select name from sqlite_master where type='table' order by name")
-    ).scalars().all()
-    return {"status": "ok", "database": "sqlite", "sqlite_version": version, "tables": tables}
+    db.execute(text("SELECT 1"))
+    return {"status": "ok", "database": db.get_bind().dialect.name}

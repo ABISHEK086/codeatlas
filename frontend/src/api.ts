@@ -109,5 +109,4 @@ export const api = {
     }),
 }
 
-// Login must be a full-page redirect to the backend (GitHub OAuth)
-export const LOGIN_URL = 'http://localhost:8000/auth/github/login'
+export const LOGIN_URL = '/api/auth/github/login'

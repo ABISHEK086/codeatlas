@@ -71,7 +71,7 @@ def github_callback(
     response = RedirectResponse(settings.frontend_url)
     response.set_cookie(
         COOKIE_NAME, session, httponly=True, samesite="lax",
-        secure=False,  # set True when deployed on HTTPS
+        secure=settings.cookie_secure,
         max_age=SESSION_DAYS * 86400,
     )
     return response
