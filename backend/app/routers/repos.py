@@ -17,6 +17,7 @@ from ..indexer import index_repo, search_repo
 from ..ingest import ingest_repo
 from ..models import Commit, CommitFile, File, Repository, Symbol, User
 from ..security import get_current_user
+from ..ratelimit import ask_limit, index_limit
 
 router = APIRouter(prefix="/repos", tags=["repos"])
 
@@ -209,7 +210,7 @@ def activity(repo_id: int, user: User = Depends(get_current_user),
 
 # ------------------------------------------------------------ search / ask
 @router.post("/{repo_id}/index")
-def index(repo_id: int, user: User = Depends(get_current_user),
+def index(repo_id: int, user: User = Depends(index_limit),
           db: Session = Depends(get_db)):
     repo = _owned_repo(repo_id, user, db)
     if repo.status != "ready":
@@ -225,7 +226,7 @@ def search(repo_id: int, q: str, k: int = 5, kind: str | None = None,
 
 
 @router.post("/{repo_id}/ask")
-def ask(repo_id: int, body: AskBody, user: User = Depends(get_current_user),
+def ask(repo_id: int, body: AskBody, user: User = Depends(ask_limit),
         db: Session = Depends(get_db)):
     repo = _owned_repo(repo_id, user, db)
     if repo.status != "ready":

@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     groq_model: str = "openai/gpt-oss-120b"
     llm_max_steps: int = 6
     embedding_dim: int = 384
+    ask_per_minute: int = 5
+    ask_per_day: int = 50
+    index_per_hour: int = 6
     backend_url: str = "http://localhost:8000"
     frontend_url: str = "http://localhost:5173"
     max_commits: int = 50

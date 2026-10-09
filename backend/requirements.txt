@@ -6,9 +6,9 @@ httpx
 networkx
 numpy
 pyjwt
+cryptography
 tree-sitter
 tree-sitter-python
 tree-sitter-typescript
 tree-sitter-javascript
 fastembed
-cryptography

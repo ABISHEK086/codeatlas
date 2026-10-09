@@ -146,7 +146,8 @@ class Toolbox:
 SYSTEM = """You are CodeAtlas, an assistant that predicts the impact of code changes in one repository.
 
 Rules:
-- Gather facts with the tools before answering. Never guess file paths: use find_files if unsure.
+- Context gathered by tools is provided in the user message. Call more tools if you need more facts.
+- Never guess file paths: use find_files if unsure.
 - Facts about dependents, tests, routes and history must come from tool results only.
 - Do not invent a risk score. The engine computes it; explain it using the factors from get_impact.
 - Only cite file paths and line numbers that appeared in tool results.
@@ -203,19 +204,32 @@ def run_agent(db: Session, repo_id: int, question: str, file_path: str | None = 
 
     user_msg = question
     if file_path:
-        user_msg = (f"I am planning to change `{file_path}`.\n{question}\n"
-                    f"Start by calling get_impact for that file.")
+        user_msg = f"I am planning to change `{file_path}`.\n{question}"
 
     tb = Toolbox(db, repo_id)
-    messages: list[dict] = [{"role": "system", "content": SYSTEM},
-                            {"role": "user", "content": user_msg}]
     trace: list[dict] = []
     gathered: list[str] = []
 
-    # ---- phase 1: tool loop ----
-    for _ in range(settings.llm_max_steps):
+    # Seed context in code, so the model never starts empty-handed
+    seeds: list[tuple[str, dict]] = []
+    if file_path:
+        seeds.append(("get_impact", {"path": file_path}))
+    seeds.append(("search_code", {"query": question, "k": 5}))
+    for name, args in seeds:
+        result = json.dumps(tb.run(name, args), default=str)[:MAX_TOOL_CHARS]
+        trace.append({"tool": name, "args": args})
+        gathered.append(f"### {name}({json.dumps(args)})\n{result}")
+
+    messages: list[dict] = [
+        {"role": "system", "content": SYSTEM},
+        {"role": "user", "content": (
+            user_msg + "\n\nContext already gathered:\n\n" + "\n\n".join(gathered))},
+    ]
+
+    # ---- phase 1: tool loop (the model may gather more) ----
+    for step in range(settings.llm_max_steps):
         try:
-            msg = llm.chat(messages, tools=TOOLS)
+            msg = llm.chat(messages, tools=TOOLS, tool_choice="auto")
         except llm.LLMError as e:
             if "tool_use_failed" in str(e):          # model produced a malformed tool call
                 messages.append({"role": "user",
@@ -245,7 +259,7 @@ def run_agent(db: Session, repo_id: int, question: str, file_path: str | None = 
         {"role": "system", "content": SYSTEM},
         {"role": "user", "content": (
             f"Question: {user_msg}\n\nTool results gathered so far:\n\n"
-            + ("\n\n".join(gathered) or "(no tools were called)") + "\n\n" + FINAL)},
+            + "\n\n".join(gathered) + "\n\n" + FINAL)},
     ]
     answer: Answer | None = None
     for _ in range(2):

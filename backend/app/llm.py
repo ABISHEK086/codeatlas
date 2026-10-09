@@ -20,7 +20,7 @@ def _retry_after(r: httpx.Response) -> float:
 
 def chat(messages: list[dict], tools: list[dict] | None = None,
          json_mode: bool = False, temperature: float = 0.1,
-         max_tokens: int = 1500) -> dict:
+         max_tokens: int = 1500, tool_choice: str = "auto") -> dict:
     """Returns the assistant message dict. Swap this one function to change provider."""
     if not settings.groq_api_key:
         raise LLMError("GROQ_API_KEY is not set in .env")
@@ -35,7 +35,7 @@ def chat(messages: list[dict], tools: list[dict] | None = None,
         payload["reasoning_effort"] = "low"   # faster, and fewer tokens used
     if tools:
         payload["tools"] = tools
-        payload["tool_choice"] = "auto"
+        payload["tool_choice"] = tool_choice
     if json_mode:
         payload["response_format"] = {"type": "json_object"}
 
