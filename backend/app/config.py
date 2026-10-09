@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     github_client_id: str = ""
     github_client_secret: str = ""
     groq_api_key: str = ""
+    token_encryption_key: str = ""
     groq_model: str = "openai/gpt-oss-120b"
     llm_max_steps: int = 6
     embedding_dim: int = 384

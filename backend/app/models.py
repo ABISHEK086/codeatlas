@@ -1,4 +1,5 @@
 from datetime import datetime
+from .crypto import EncryptedText
 
 from sqlalchemy import (
     DateTime, ForeignKey, Integer, LargeBinary, String, Text,
@@ -18,7 +19,7 @@ class User(Base):
     github_id: Mapped[int] = mapped_column(Integer, unique=True, index=True)
     login: Mapped[str] = mapped_column(String(255))
     avatar_url: Mapped[str | None] = mapped_column(Text)
-    access_token: Mapped[str] = mapped_column(Text)  # dev only: encrypt before deploying
+    access_token: Mapped[str] = mapped_column(EncryptedText)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 

@@ -11,3 +11,4 @@ tree-sitter-python
 tree-sitter-typescript
 tree-sitter-javascript
 fastembed
+cryptography
