@@ -9,7 +9,7 @@ _fernet = Fernet(settings.token_encryption_key.encode()) if settings.token_encry
 PREFIX = "enc:"  # marks encrypted values so plain-text legacy rows are recognised
 
 
-class EncryptedText(TypeDecorator):
+class EncryptedText(TypeDecorator): 
     """Encrypts on write, decrypts on read. Transparent to the rest of the code."""
 
     impl = Text
