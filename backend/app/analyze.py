@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from .models import Edge, File, Symbol
 from .parsing import make_parsers, parse_file
-from .resolve import Resolver
+from .resolve import Resolver 
 
 log = logging.getLogger("codeatlas.analyze")
 
