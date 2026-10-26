@@ -6,7 +6,7 @@ from .models import Edge, File
 
 
 def build_graph(db: Session, repo_id: int) -> nx.DiGraph:
-    """Edge A -> B means 'A depends on B' (A imports B)."""
+    """Edge A -> B means 'A depends on B' (A imports B).""" 
     g = nx.DiGraph()
     for f in db.execute(
         select(File.id, File.path, File.kind, File.language).where(File.repo_id == repo_id)
