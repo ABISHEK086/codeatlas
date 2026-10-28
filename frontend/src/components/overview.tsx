@@ -4,7 +4,7 @@ import ContributionSkyline, { type ContributionDay } from '@/components/ui/contr
 
 const BADGE: Record<Repo['status'], string> = {
   ready: 'border-success/40 text-success',
-  indexing: 'border-warning/40 text-warning animate-pulse',
+  indexing: 'border-warning/40 text-warning animate-pulse', 
   pending: 'border-border text-muted-foreground',
   failed: 'border-danger/40 text-danger',
 }
