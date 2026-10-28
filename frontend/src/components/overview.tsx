@@ -16,7 +16,7 @@ export default function Overview({ repo }: { repo: Repo }) {
   const [note, setNote] = useState<string | null>(null)
 
   useEffect(() => {
-    if (repo.status !== 'ready') return
+    if (repo.status !== 'ready') return 
     let live = true
     api.activity(repo.id)
       .then((d) => { if (live) setActivity(d) })
