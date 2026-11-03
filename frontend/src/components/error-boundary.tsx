@@ -3,7 +3,7 @@ import ErrorPage from '@/components/error-page'
 
 export default class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state = { error: null as Error | null }
-
+ 
   static getDerivedStateFromError(error: Error) {
     return { error }
   }
