@@ -6,7 +6,7 @@ export default class ErrorBoundary extends Component<{ children: ReactNode }, { 
  
   static getDerivedStateFromError(error: Error) {
     return { error }
-  }
+  } 
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error(error, info.componentStack)
