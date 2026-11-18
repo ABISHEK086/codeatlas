@@ -7,7 +7,7 @@ export type Repo = {
   status: 'pending' | 'indexing' | 'ready' | 'failed'
   error: string | null
   files: number
-  files_by_kind: Record<string, number>
+  files_by_kind: Record<string, number> 
   commits: number
 }
 
