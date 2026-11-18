@@ -3,7 +3,7 @@ export type User = { id: number; login: string; avatar_url: string | null }
 export type Repo = {
   id: number
   full_name: string
-  default_branch: string
+  default_branch: string 
   status: 'pending' | 'indexing' | 'ready' | 'failed'
   error: string | null
   files: number
