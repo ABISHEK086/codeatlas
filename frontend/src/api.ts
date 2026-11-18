@@ -8,7 +8,7 @@ export type Repo = {
   error: string | null
   files: number
   files_by_kind: Record<string, number> 
-  commits: number
+  commits: number 
 }
 
 export type FileItem = { id: number; path: string; language: string | null; kind: string }
